@@ -22,7 +22,7 @@ class Product(BaseModel):
     name = CharField(index=True)
     description = CharField()
     price_per_unit = DecimalField(decimal_places=2, auto_round=True)
-    stock = IntegerField(default=0)
+    stock = IntegerField()
     owner = ForeignKeyField(User, backref="productlist")
 
 
@@ -35,7 +35,7 @@ class ProductTag(BaseModel):
     tag = ForeignKeyField(Tag, backref="producttags")
 
 
-class Webshop_Transaction(BaseModel):
+class WebshopTransaction(BaseModel):
     buyer = ForeignKeyField(User)
     product = ForeignKeyField(Product)
-    quantity = IntegerField
+    quantity = IntegerField()

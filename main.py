@@ -1,11 +1,20 @@
 __winc_id__ = "d7b474e9b3a54d23bca54879a4f1855b"
 __human_name__ = "Betsy Webshop"
 
-from models import Product, Tag, ProductTag, Webshop_Transaction
+from models import Product, Tag, ProductTag, WebshopTransaction
 import os
 from setupdb import populate_database
 from peewee import fn
 from spellchecker import SpellChecker
+
+
+def main():
+    # search("sweter")
+    # list_products_per_tag(2)
+    add_product_to_catalog(3, "badmintonset")
+    # remove_product(10)
+    # update_stock(11, 200)
+    # purchase_product(2, 3, 2)
 
 
 def check_file():
@@ -117,23 +126,39 @@ def update_stock(product_id, new_quantity):
     check_file()
     query = Product.update(stock=new_quantity).where(Product.id == product_id)
     query.execute()
-    if Product.stock == 0:
-        remove_product(product_id)
+    for product in Product.select().where(Product.id == product_id):
+        if product.stock == 0:
+            remove_product(product_id)
+        else:
+            print(str(product.stock) + " item(s) left")
 
 
 def purchase_product(product_id, buyer_id, quantity):
     check_file()
     for product in Product.select().where(Product.id == product_id):
-        if product.owner == buyer_id:
+        if product.owner_id == buyer_id:
             print("not possible to buy your own products")
+            exit()
         if product.stock < quantity:
             print("not enough items in stock")
         if product.stock >= quantity:
             new_quantity = (product.stock) - quantity
-            update_stock(product_id, new_quantity)
-            Webshop_Transaction.update(
-                buyer=buyer_id, product=product_id, quantity=quantity
+            query = WebshopTransaction.select().where(
+                (WebshopTransaction.product == product_id)
+                & (WebshopTransaction.buyer == buyer_id)
             )
+            if query.exists():
+                row = WebshopTransaction.get(
+                    (WebshopTransaction.product == product_id)
+                    & (WebshopTransaction.buyer == buyer_id)
+                )
+                row.quantity = row.quantity + quantity
+                row.save()
+            else:
+                WebshopTransaction.create(
+                    buyer=buyer_id, product=product_id, quantity=quantity
+                )
+            update_stock(product_id, new_quantity)
 
 
 def remove_product(product_id):
@@ -143,10 +168,4 @@ def remove_product(product_id):
 
 
 if __name__ == "__main__":
-    (search("sweter"))
-    # list_products_per_tag(2)
-    # add_product_to_catalog(1, "gymschoen")
-    # check_file()
-    # remove_product(10)
-    # update_stock(11,200)
-    # purchase_product(6,1,5)
+    main()
